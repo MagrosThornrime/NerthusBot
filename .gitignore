@@ -2,3 +2,4 @@ venv/
 .env
 notes.md
 .idea/
+__pycache__/
