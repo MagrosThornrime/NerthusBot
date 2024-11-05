@@ -14,43 +14,7 @@ testing_guild = 868754530639171594
 client = dc.Client(debug_guilds=[testing_guild,], intents=intents)
 tree = dc.app_commands.CommandTree(client)
 
-class DeclarationModal(ModalPaginator):
-    name = dc.ui.TextInput(
-        label="Tytuł deklarki",
-        placeholder="Zwykły dzień w Forcie Eder",
-        max_length=100
-    )
-    places = dc.ui.TextInput(
-        label="Lokalizacje",
-        placeholder="Fort Eder, Fortyfikacja p.1",
-        max_length=100
-    )
-    logs = dc.ui.TextInput(
-        label="Link do logów",
-        placeholder="najlepiej skorzystać z pastebina",
-        max_length=100
-    )
-    description = dc.ui.TextInput(
-        label="Opis",
-        style=dc.TextStyle.long,
-        placeholder=(
-            "Anward zwyzywał wory z Fortu"
-            "oraz popodglądał sparing Rose i Brimm."
-        ),
-        max_length=1400
-    )
-    points = dc.ui.TextInput(
-        label=(
-            "Lista graczy i sugestia"
-            "ile powinni dostać PU"
-        ),
-        style=dc.TextStyle.long,
-        placeholder=(
-            "\"Anward\" 0.2\n"
-            "\"Velrose\" 0.3\n"
-            "\"Brimm Schadenfreude\" 0.3")
-    )
-
+class DeclarationPaginator(ModalPaginator):
     def parse_points(self, points: str) -> str:
         points_description = "- PU:\n"
         pattern = r"^\"(.*)\"[ \t]*(0\.[0-9]+)$"
@@ -88,33 +52,66 @@ class DeclarationModal(ModalPaginator):
         )
         return declaration
 
+    def create_main_modal(self) -> PaginatorModal:
+        modal = PaginatorModal(title="Uzupełnij deklarkę")
+        modal.add_input(
+            label="Tytuł deklarki",
+            placeholder="Zwykły dzień w Forcie Eder",
+            max_length=100
+        )
+        modal.add_input(
+            label="Lokalizacje",
+            placeholder="Fort Eder, Fortyfikacja p.1",
+            max_length=100
+        )
+        modal.add_input(
+            label="Link do logów",
+            placeholder="najlepiej skorzystać z pastebina",
+            max_length=100
+        )
+        modal.add_input(
+            label="Opis",
+            style=dc.TextStyle.long,
+            placeholder=(
+                "Anward zwyzywał wory z Fortu"
+                "oraz popodglądał sparing Rose i Brimm."
+            ),
+            max_length=1400
+        )
+        return modal
+
+    def create_players_modal(self, first_player: int, rows: int) -> PaginatorModal:
+        modal = PaginatorModal(title="Dodaj graczy")
+        for row in range(rows):
+            modal.add_input(
+                label=f"Gracz nr {first_player + row}",
+                max_length=30
+            )
+        return modal
+
     def __init__(self, players: int):
         super().__init__()
         if players <= 0:
             raise ValueError("Musi być conajmniej jeden gracz")
         if players > 16:
             raise ValueError("Ale że aż tyle graczy?")
+        self.add_modal(self.create_main_modal())
         for i in range(0, players, 5):
-            modal = PaginatorModal(title="Dodaj graczy")
-            for j in range(min(players - i, 5)):
-                modal.add_input(
-                    label=f"Gracz nr {i+j}",
-                    max_length=30
-                )
+            modal = self.create_players_modal(i, min(players - i, 5))
             self.add_modal(modal)
-
-
 
     async def on_finish(self, interaction: dc.Interaction) -> None:
         players = []
-        for modal in self.modals:
+        main_modal = self.modals[0]
+        name = main_modal.children[0].value
+        places = main_modal.children[1].value
+        logs = main_modal.children[2].value
+        description = main_modal.children[3].value
+        for modal in self.modals[1:]:
             for field in modal.children:
                 players.append(field.value)
-        declaration = self.create_declaration(self.name.value,
-                                              self.places.value,
-                                              self.logs.value,
-                                              self.description.value,
-                                              players)
+        declaration = self.create_declaration(name, places, logs,
+                                              description, players)
         await interaction.response.send_message(declaration)
 
 @client.event
@@ -128,8 +125,7 @@ async def on_ready():
 )
 @dc.app_commands.describe(players="Liczba graczy")
 async def declaration(interaction: dc.Interaction, players: int):
-    modal = DeclarationModal(players)
-    await interaction.response.send_modal(modal)
-
+    paginator = DeclarationPaginator(players)
+    await paginator.send(interaction)
 
 client.run(os.getenv('TOKEN'))
