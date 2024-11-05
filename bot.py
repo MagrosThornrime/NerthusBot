@@ -40,13 +40,15 @@ class DeclariationModal(dc.ui.Modal):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         
-        title = dc.ui.InputText(label="Tytuł deklarki", placeholder="Zwykły dzień w Forcie Eder")
-        places = dc.ui.InputText(label="Lokalizacje", placeholder="Fort Eder, Fortyfikacja p.1")
-        logs = dc.ui.InputText(label="Link do logów", placeholder="najlepiej skorzystać z pastebina")
+        title = dc.ui.InputText(label="Tytuł deklarki", placeholder="Zwykły dzień w Forcie Eder", max_length=100)
+        places = dc.ui.InputText(label="Lokalizacje", placeholder="Fort Eder, Fortyfikacja p.1", max_length=100)
+        logs = dc.ui.InputText(label="Link do logów", placeholder="najlepiej skorzystać z pastebina", max_length=100)
         description = dc.ui.InputText(label="Opis", style=dc.InputTextStyle.long,
-                                      placeholder="Anward zwyzywał wory z Fortu oraz popodglądał sparing Rose i Brimm.")
+                                      placeholder="Anward zwyzywał wory z Fortu oraz popodglądał sparing Rose i Brimm.",
+                                      max_length=1550)
         points = dc.ui.InputText(label="Lista graczy i sugestia ile powinni dostać PU", style=dc.InputTextStyle.long,
-                                 placeholder="\"Anward\" 0.2\n\"Velrose\" 0.3\n\"Brimm Schadenfreude\" 0.3")
+                                 placeholder="\"Anward\" 0.2\n\"Velrose\" 0.3\n\"Brimm Schadenfreude\" 0.3",
+                                 max_length=350)
         for input_text in (title, places, logs, description, points):
             self.add_item(input_text)
 
@@ -63,46 +65,11 @@ class DeclariationModal(dc.ui.Modal):
 async def on_ready():
     print(f"{bot.user} is ready and online!")
 
-def is_player_category(category: dc.CategoryChannel | None) -> bool:
-    if category is None:
-        return False
-    name = str(category)
-    if len(name) != 3:
-        return False
-    left = name[0].lower()
-    middle = name[1].lower()
-    right = name[2].lower()
-    return left.isalpha() and right.isalpha() and left < right and middle == "-"
-
-def get_player_channels(guild: dc.Guild) -> list[dc.abc.GuildChannel]:
-    channels = []
-    for category, category_channels in guild.by_category():
-        if is_player_category(category):
-            channels.extend(category_channels)
-    return channels
-
-async def send_to_other_players(channels: list[dc.abc.GuildChannel], message: dc.Message, player: str):
-    for channel in channels:
-        other_player = str(channel)
-        if player == other_player:
-            continue
-        await channel.send(content=message.content, files=[await f.to_file() for f in message.attachments])
-
     
 @bot.slash_command()
 async def send_declaration(ctx: dc.ApplicationContext):
-    """Shows an example of a modal dialog being invoked from a slash command."""
+    """Stwórz i wyślij deklarkę. Trafi na ten kanał i specjalny kanał Rady."""
     modal = DeclariationModal(title="Uzupełnij deklarkę")
     await ctx.send_modal(modal)
-
-@bot.message_command(name="Wyślij do pozostałych")
-async def send_to_others(ctx: dc.ApplicationContext, message: dc.Message):
-    channel = ctx.channel
-    category = channel.category
-    if is_player_category(category):
-        await send_to_other_players(get_player_channels(ctx.guild), message, str(channel))
-        await ctx.respond("Deklarka skopiowana")
-    else:
-        await ctx.respond("Nie możesz skopiować wiadomości na kanale innym niż kanał gracza")
 
 bot.run(os.getenv('TOKEN'))
