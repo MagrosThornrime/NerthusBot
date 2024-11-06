@@ -1,10 +1,8 @@
 from datetime import date
-import re
 import random
 
 import discord as dc
 from discord.ext.modal_paginator import ModalPaginator, PaginatorModal, CustomButton
-from discord.ui import button
 
 
 class OpenButton(CustomButton):
@@ -106,12 +104,13 @@ class DeclarationPaginator(ModalPaginator):
             )
         return modal
 
-    def __init__(self, players: int):
+    def __init__(self, players: int, screenshot: dc.Attachment):
         super().__init__(buttons=self.buttons)
         if players <= 0:
             raise ValueError("Musi być conajmniej jeden gracz")
         if players > 16:
             raise ValueError("Ale że aż tyle graczy?")
+        self.screenshot = screenshot
         self.add_modal(self.create_main_modal())
         for i in range(0, players, 2):
             modal = self.create_players_modal(i, min(players - i, 2))
@@ -125,13 +124,13 @@ class DeclarationPaginator(ModalPaginator):
         logs = main_modal.children[2].value
         description = main_modal.children[3].value
         for modal in self.modals[1:]:
-            name = ""
+            player = ""
             for index, field in enumerate(modal.children):
                 if index % 2 == 0:
-                    name = field.value
+                    player = field.value
                 else:
                     points = field.value
-                    players.append((name, points))
+                    players.append((player, points))
         declaration = self.create_declaration(name, places, logs,
                                               description, players)
-        await interaction.response.send_message(declaration)
+        await interaction.response.send_message(declaration, file=await self.screenshot.to_file())

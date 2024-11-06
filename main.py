@@ -22,8 +22,10 @@ async def on_ready():
     description="Stwórz i wyślij deklarkę. Trafi na ten kanał i specjalny kanał Rady."
 )
 @dc.app_commands.describe(players="Liczba graczy")
-async def declaration(interaction: dc.Interaction, players: int):
-    paginator = DeclarationPaginator(players)
+@dc.app_commands.describe(screenshot="Screenshot z gry")
+async def declaration(interaction: dc.Interaction, players: int,
+                      screenshot: dc.Attachment):
+    paginator = DeclarationPaginator(players, screenshot)
     await paginator.send(interaction)
 
 client.run(os.getenv('TOKEN'))
