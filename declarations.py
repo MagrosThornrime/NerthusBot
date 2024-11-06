@@ -91,7 +91,7 @@ class DeclarationPaginator(ModalPaginator):
     def create_players_modal(self, first_player: int, rows: int) -> PaginatorModal:
         modal = PaginatorModal(title=f"Dodaj graczy - część {first_player // 2 + 1}")
         for row in range(rows):
-            player_number = first_player + rows + 1
+            player_number = first_player + row + 1
             modal.add_input(
                 label=f"Nick gracza nr. {player_number}",
                 max_length=30,
