@@ -61,7 +61,7 @@ class DeclarationPaginator(ModalPaginator):
         return declaration
 
     def create_main_modal(self) -> PaginatorModal:
-        modal = PaginatorModal(title="Uzupełnij deklarkę")
+        modal = PaginatorModal(title="Uzupełnij deklarkę", required=True)
         modal.add_input(
             label="Tytuł deklarki",
             placeholder="Zwykły dzień w Forcie Eder",
@@ -89,7 +89,8 @@ class DeclarationPaginator(ModalPaginator):
         return modal
 
     def create_players_modal(self, first_player: int, rows: int) -> PaginatorModal:
-        modal = PaginatorModal(title=f"Dodaj graczy - część {first_player // 2 + 1}")
+        modal = PaginatorModal(title=f"Dodaj graczy - część {first_player // 2 + 1}",
+                               required=True)
         for row in range(rows):
             player_number = first_player + row + 1
             modal.add_input(
