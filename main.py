@@ -26,6 +26,6 @@ async def on_ready():
 async def declaration(interaction: dc.Interaction, players: int,
                       screenshot: dc.Attachment):
     paginator = DeclarationPaginator(players, screenshot)
-    await paginator.send(interaction)
+    await paginator.send(interaction, ephemeral=True)
 
 client.run(os.getenv('TOKEN'))

@@ -1,5 +1,6 @@
 from datetime import date
 import random
+import asyncio
 
 import discord as dc
 from discord.ext.modal_paginator import ModalPaginator, PaginatorModal, CustomButton
@@ -61,7 +62,7 @@ class DeclarationPaginator(ModalPaginator):
         return declaration
 
     def create_main_modal(self) -> PaginatorModal:
-        modal = PaginatorModal(title="Uzupełnij deklarkę", required=True)
+        modal = PaginatorModal(title="Uzupełnij deklarkę")
         modal.add_input(
             label="Tytuł deklarki",
             placeholder="Zwykły dzień w Forcie Eder",
@@ -89,8 +90,7 @@ class DeclarationPaginator(ModalPaginator):
         return modal
 
     def create_players_modal(self, first_player: int, rows: int) -> PaginatorModal:
-        modal = PaginatorModal(title=f"Dodaj graczy - część {first_player // 2 + 1}",
-                               required=True)
+        modal = PaginatorModal(title=f"Dodaj graczy - część {first_player // 2 + 1}")
         for row in range(rows):
             player_number = first_player + row + 1
             modal.add_input(
@@ -118,6 +118,7 @@ class DeclarationPaginator(ModalPaginator):
             self.add_modal(modal)
 
     async def on_finish(self, interaction: dc.Interaction) -> None:
+        await interaction.response.defer()
         players = []
         main_modal = self.modals[0]
         name = main_modal.children[0].value
@@ -134,4 +135,4 @@ class DeclarationPaginator(ModalPaginator):
                     players.append((player, points))
         declaration = self.create_declaration(name, places, logs,
                                               description, players)
-        await interaction.response.send_message(declaration, file=await self.screenshot.to_file())
+        await interaction.followup.send(declaration, file=await self.screenshot.to_file())
